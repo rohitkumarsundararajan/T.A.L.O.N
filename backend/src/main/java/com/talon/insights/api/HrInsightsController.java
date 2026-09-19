@@ -46,13 +46,13 @@ public class HrInsightsController {
     public ResponseEntity<List<Map<String, Object>>> getBusFactor() {
         var alerts = jdbcTemplate.queryForList("""
             SELECT s.id AS skill_id, s.name, s.category,
-                   COUNT(es.id) FILTER (WHERE es.level >= 3) AS proficient_holders,
+                   COUNT(DISTINCT es.employee_id) FILTER (WHERE es.level >= 3) AS proficient_holders,
                    COUNT(DISTINCT rsr.role_id) AS open_role_demand
             FROM skill s
             LEFT JOIN employee_skill es ON es.skill_id = s.id
             JOIN role_skill_requirement rsr ON rsr.skill_id = s.id
             GROUP BY s.id, s.name, s.category
-            HAVING COUNT(es.id) FILTER (WHERE es.level >= 3) <= 2
+            HAVING COUNT(DISTINCT es.employee_id) FILTER (WHERE es.level >= 3) <= 2
             ORDER BY open_role_demand DESC
         """);
         return ResponseEntity.ok(alerts);

@@ -2,18 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api';
-import { Cpu, TrendingUp, Sliders } from 'lucide-react';
+import { Cpu, TrendingUp, Sliders, Zap, CheckCircle2, RefreshCw } from 'lucide-react';
+
+const SKILL_OPTIONS = [
+  { id: 18, name: 'Kubernetes Orchestration', category: 'Cloud & DevOps' },
+  { id: 10, name: 'Cloud Architecture & AWS', category: 'Cloud & DevOps' },
+  { id: 3, name: 'Python Data Pipeline', category: 'Data & AI' },
+  { id: 12, name: 'PostgreSQL & pgvector', category: 'Backend' },
+];
 
 export default function WhatIfPage() {
+  const [selectedSkill, setSelectedSkill] = useState<any>(SKILL_OPTIONS[0]);
   const [level, setLevel] = useState<number>(3);
   const [results, setResults] = useState<any[]>([]);
+  const [simulating, setSimulating] = useState<boolean>(false);
 
-  const runSimulation = async (targetLevel: number) => {
+  const runSimulation = async (skillId: number, targetLevel: number) => {
+    setSimulating(true);
     try {
       const res = await apiFetch('/api/v1/me/whatif', {
         method: 'POST',
         body: JSON.stringify({
-          addSkills: [{ skillId: 18, level: targetLevel }],
+          addSkills: [{ skillId: skillId, level: targetLevel }],
         }),
       });
       if (res.ok) {
@@ -21,86 +31,138 @@ export default function WhatIfPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setSimulating(false);
     }
   };
 
   useEffect(() => {
-    runSimulation(level);
-  }, [level]);
+    runSimulation(selectedSkill.id, level);
+  }, [selectedSkill, level]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-textPrimary flex items-center gap-2">
-          <Cpu className="w-6 h-6 text-talonGold" /> Real-Time Career Simulator
+    <div className="space-y-8">
+      {/* Cockpit Header */}
+      <div className="bg-surface border border-border rounded-2xl p-6 sm:p-8 space-y-2 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-talonGold/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex items-center gap-2 text-xs font-mono text-talonGold font-bold">
+          <Zap className="w-4 h-4" /> IN-MEMORY GRAPH COMPUTATION ENGINE
+        </div>
+        <h1 className="text-3xl font-bold text-textPrimary tracking-tight flex items-center gap-3">
+          <Cpu className="w-8 h-8 text-talonGold" /> Real-Time Career Simulator
         </h1>
         <p className="text-xs text-textMuted font-mono">
-          Sub-150ms In-Memory Simulation • Zero Database Writes • Pure Graph Computation
+          Sub-150ms In-Memory Vector & Adjacency Re-scoring • Zero Database Mutations • Instant Skill Impact Analysis
         </p>
       </div>
 
-      <div className="bg-surface border border-border rounded-xl p-6 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-lg bg-[#0A0E14] border border-border">
-          <div>
-            <span className="text-xs font-mono uppercase text-talonGold font-semibold flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5" /> Simulated Acquisition
+      <div className="bg-surface border border-border rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
+        {/* Simulation Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 rounded-2xl bg-[#06090F] border border-border">
+          {/* Skill Selector */}
+          <div className="space-y-2">
+            <span className="text-xs font-mono uppercase text-talonGold font-bold flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5" /> 1. Select Hypothetical Skill Acquisition
             </span>
-            <h3 className="text-lg font-bold text-textPrimary">Kubernetes Orchestration</h3>
-            <p className="text-xs text-textMuted">Simulate closing the primary gap for DevOps and Cloud roles.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {SKILL_OPTIONS.map((sk) => (
+                <button
+                  key={sk.id}
+                  type="button"
+                  onClick={() => setSelectedSkill(sk)}
+                  className={`p-3 rounded-xl border text-left text-xs font-mono transition-all ${
+                    selectedSkill.id === sk.id
+                      ? 'bg-talonGold/10 border-talonGold text-textPrimary font-bold shadow-sm'
+                      : 'bg-surface border-border text-textMuted hover:text-textPrimary hover:border-border'
+                  }`}
+                >
+                  <div className="text-textPrimary font-semibold">{sk.name}</div>
+                  <div className="text-[10px] text-talonCyan mt-0.5">{sk.category}</div>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-mono text-textMuted">Proficiency Level:</span>
-            <div className="flex items-center gap-2">
+          {/* Level Selector */}
+          <div className="space-y-3 flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-mono uppercase text-talonGold font-bold flex items-center gap-1.5 mb-2">
+                <Zap className="w-3.5 h-3.5" /> 2. Target Proficiency Level
+              </span>
+              <p className="text-xs text-textMuted font-sans mb-3">
+                Simulate acquiring <strong className="text-textPrimary">{selectedSkill.name}</strong> at level 1 to 5.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5">
               {[1, 2, 3, 4, 5].map((lvl) => (
                 <button
                   key={lvl}
+                  type="button"
                   onClick={() => setLevel(lvl)}
-                  className={`w-9 h-9 rounded-lg font-mono font-bold text-sm transition-all ${
+                  className={`flex-1 py-3 rounded-xl font-mono font-bold text-sm transition-all ${
                     level === lvl
-                      ? 'bg-talonGold text-black scale-105'
+                      ? 'bg-talonGold text-black scale-105 shadow-lg shadow-talonGold/20'
                       : 'bg-surface border border-border text-textMuted hover:text-textPrimary'
                   }`}
                 >
-                  {lvl}
+                  L{lvl}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm font-mono">
-            <thead className="border-b border-border text-xs text-textMuted uppercase">
-              <tr>
-                <th className="pb-3">Role Target</th>
-                <th className="pb-3 text-right">Current Score</th>
-                <th className="pb-3 text-right">Simulated Score</th>
-                <th className="pb-3 text-right">Instant Delta</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {results.map((r) => {
-                const hasJump = r.delta > 0;
-                return (
-                  <tr key={r.roleId} className="hover:bg-[#0A0E14]/50">
-                    <td className="py-3 font-semibold text-textPrimary">{r.title}</td>
-                    <td className="py-3 text-right text-textMuted">{Math.round(r.currentScore * 100)}%</td>
-                    <td className="py-3 text-right font-bold text-talonGold">{Math.round(r.newScore * 100)}%</td>
-                    <td className="py-3 text-right">
-                      {hasJump ? (
-                        <span className="px-2 py-1 rounded bg-talonGreen/10 text-talonGreen border border-talonGreen/30 font-bold inline-flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3" /> +{(r.delta * 100).toFixed(1)}%
-                        </span>
-                      ) : (
-                        <span className="text-textMuted/40">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        {/* Results Table */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-mono uppercase text-textMuted font-bold tracking-wider">
+              Simulated Role Impact Matrix
+            </h2>
+            {simulating && (
+              <span className="text-xs font-mono text-talonGold flex items-center gap-1.5 animate-pulse">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Recalculating Graph...
+              </span>
+            )}
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-border bg-[#06090F]">
+            <table className="w-full text-left text-sm font-mono">
+              <thead className="border-b border-border text-xs text-textMuted uppercase bg-surface/50">
+                <tr>
+                  <th className="p-4 font-semibold">Target Role</th>
+                  <th className="p-4 font-semibold text-right">Baseline Match</th>
+                  <th className="p-4 font-semibold text-right">Simulated Match</th>
+                  <th className="p-4 font-semibold text-right">Instant Delta (+%)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {results.map((r) => {
+                  const hasJump = r.delta > 0;
+                  const currentPct = Math.round(r.currentScore * 100);
+                  const newPct = Math.round(r.newScore * 100);
+                  return (
+                    <tr key={r.roleId} className="hover:bg-surface/40 transition-colors">
+                      <td className="p-4 font-semibold text-textPrimary font-sans">{r.title}</td>
+                      <td className="p-4 text-right text-textMuted font-mono">{currentPct}%</td>
+                      <td className="p-4 text-right font-bold text-talonGold font-mono text-base">
+                        {newPct}%
+                      </td>
+                      <td className="p-4 text-right">
+                        {hasJump ? (
+                          <span className="px-3 py-1 rounded-lg bg-talonGreen/10 text-talonGreen border border-talonGreen/30 font-bold inline-flex items-center gap-1 text-xs">
+                            <TrendingUp className="w-3.5 h-3.5" /> +{(r.delta * 100).toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-textMuted/40 text-xs">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

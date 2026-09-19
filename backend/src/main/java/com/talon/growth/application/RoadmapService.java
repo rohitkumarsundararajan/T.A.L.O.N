@@ -70,6 +70,17 @@ public class RoadmapService {
 
     @Transactional
     public RoadmapDto buildRoadmap(Long employeeId, Long roleId) {
+        Optional<Roadmap> existing = roadmapRepo.findFirstByEmployeeIdAndRoleIdOrderByIdDesc(employeeId, roleId);
+        if (existing.isPresent()) {
+            List<RoadmapStep> existingSteps = stepRepo.findByRoadmapIdOrderBySeqAsc(existing.get().getId());
+            if (!existingSteps.isEmpty()) {
+                List<RoadmapStepDto> stepDtos = existingSteps.stream()
+                        .map(s -> new RoadmapStepDto(s.getId(), s.getSeq(), s.getTitle(), s.getEffortWeeks(), s.getStatus()))
+                        .toList();
+                return new RoadmapDto(existing.get().getId(), roleId, stepDtos);
+            }
+        }
+
         List<GapItem> gaps = computeGaps(employeeId, roleId);
         Roadmap roadmap = roadmapRepo.save(new Roadmap(employeeId, roleId));
 
